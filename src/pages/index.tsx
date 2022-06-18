@@ -47,9 +47,9 @@ const Home: NextPage = () => {
     description: '',
   });
 
-  // const { inputRef } = useBarcode({
-  //   value: barcode.id || '01234567890',
-  // });
+  const { inputRef } = useBarcode({
+    value: barcode.id || '01234567890',
+  });
 
   const {
     handleSubmit,
@@ -65,7 +65,7 @@ const Home: NextPage = () => {
       const res = await axios.post('/api/historical', data);
       if (res.status === 200) {
         setLoading(false);
-        toast.success('Code qr généré avec succès');
+        toast.success('Code barre généré avec succès');
       }
     } catch (error) {
       setLoading(false);
@@ -170,7 +170,7 @@ const Home: NextPage = () => {
   return (
     <>
       <Head>
-        <title>Générateur de Code QR</title>
+        <title>Générateur de Code Barre</title>
         <style type='text/css' media='print'>
           {'\
   @page { size: A4 landscape; }\
@@ -277,9 +277,9 @@ const Home: NextPage = () => {
                   variant='contained'
                   sx={{ p: 2 }}
                   onClick={handleSubmit(onGenerate)}
-                  endIcon={<RocketLaunchIcon />}
+                  startIcon={<RocketLaunchIcon />}
                 >
-                  {loading ? 'Chargement...' : 'Générer le code qr'}
+                  {loading ? 'Chargement...' : 'Générer le code barre'}
                 </Button>
                 {dataUrl && barcode?.name && (
                   <Box className='print'>
@@ -289,16 +289,16 @@ const Home: NextPage = () => {
                         fontWeight={600}
                         sx={{ textTransform: 'uppercase' }}
                       >
-                        {barcode.name}
+                        {barcode.name} | {new Date().toLocaleDateString()}
                       </Typography>
                       <Divider />
-                      <Grid container spacing={2}>
-                        {[...Array(24)].map((_, i) => (
-                          <Grid key={i} item xs={2}>
+                      <Grid container>
+                        {[...Array(16)].map((_, i) => (
+                          <Grid key={i} item xs={3}>
                             <Stack
                               sx={{
                                 width: 1,
-                                height: 150,
+                                height: 160,
                                 position: 'relative',
                               }}
                             >
@@ -323,8 +323,8 @@ const Home: NextPage = () => {
                 sx={{ height: 1, px: 4, py: 6, bgcolor: 'background.paper' }}
                 alignItems='center'
               >
-                {/* <svg ref={inputRef} id='barcode' /> */}
-                <QRCodeSVG
+                <svg ref={inputRef} id='barcode' />
+                {/* <QRCodeSVG
                   id='barcode'
                   value={`ID:${barcode.id}\nNom:${barcode.name}\nDescription:${barcode.description}`}
                   size={250}
@@ -334,12 +334,15 @@ const Home: NextPage = () => {
                   //   height: 50,
                   //   excavate: false,
                   // }}
-                />
+                /> */}
                 <Button
                   variant='contained'
-                  sx={{ p: 2, width: 1 }}
+                  sx={{
+                    p: 2,
+                    width: 1,
+                  }}
                   onClick={handlePrint}
-                  endIcon={<PrintIcon />}
+                  startIcon={<PrintIcon />}
                 >
                   Imprimer
                 </Button>
