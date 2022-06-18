@@ -1,10 +1,13 @@
 import { createTheme } from '@mui/material';
-import { indigo } from '@mui/material/colors';
+import { indigo, purple, pink } from '@mui/material/colors';
 
 export const theme = createTheme({
   palette: {
     primary: {
-      main: indigo[900],
+      main: purple[900],
+    },
+    secondary: {
+      main: pink[700],
     },
   },
 });

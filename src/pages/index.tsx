@@ -180,7 +180,8 @@ const Home: NextPage = () => {
       <Stack
         sx={{
           py: 4,
-          background: 'linear-gradient(to right, #b92b27, #1A237E)',
+          background: (theme) =>
+            `linear-gradient(to right,${theme.palette.primary.main},${theme.palette.secondary.main})`,
           minHeight: '100vh',
         }}
         alignItems='center'
@@ -203,7 +204,7 @@ const Home: NextPage = () => {
               bgcolor: 'background.paper',
               borderRadius: 1,
               my: 2,
-              boxShadow: '0 0 20px 5px rgba(200,0,0,0.2)',
+              boxShadow: '0 0 20px 5px rgba(0,0,0,0.2)',
             }}
           >
             <Tabs value={tab} onChange={handleChange}>
@@ -217,7 +218,7 @@ const Home: NextPage = () => {
             sx={{
               bgcolor: '#EBEDF5',
               borderRadius: 1,
-              boxShadow: '0 0 20px 5px rgba(200,0,0,0.2)',
+              boxShadow: '0 0 20px 5px rgba(0,0,0,0.2)',
               overflow: 'hidden',
               display: tab === 0 ? 'flex' : 'none',
               minHeight: 430,
@@ -287,6 +288,7 @@ const Home: NextPage = () => {
                       <Typography
                         textAlign='center'
                         fontWeight={600}
+                        fontSize={24}
                         sx={{ textTransform: 'uppercase' }}
                       >
                         {barcode.name} | {new Date().toLocaleDateString()}
@@ -320,10 +322,26 @@ const Home: NextPage = () => {
             <Grid item xs={12} md={4}>
               <Stack
                 spacing={4}
-                sx={{ height: 1, px: 4, py: 6, bgcolor: 'background.paper' }}
+                sx={{ height: 1, px: 4, py: 6, bgcolor: 'primary.main' }}
                 alignItems='center'
               >
-                <svg ref={inputRef} id='barcode' />
+                <Stack
+                  sx={{
+                    position: 'relative',
+                    width: 1,
+                    height: 74,
+                  }}
+                >
+                  <Image
+                    src='/logo.png'
+                    alt='logo'
+                    layout='fill'
+                    objectFit='contain'
+                  />
+                </Stack>
+                <div>
+                  <svg ref={inputRef} id='barcode' />
+                </div>
                 {/* <QRCodeSVG
                   id='barcode'
                   value={`ID:${barcode.id}\nNom:${barcode.name}\nDescription:${barcode.description}`}
@@ -341,6 +359,7 @@ const Home: NextPage = () => {
                     p: 2,
                     width: 1,
                   }}
+                  color='secondary'
                   onClick={handlePrint}
                   startIcon={<PrintIcon />}
                 >
