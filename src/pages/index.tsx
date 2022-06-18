@@ -225,7 +225,7 @@ const Home: NextPage = () => {
             }}
           >
             <Grid item xs={12} md={8}>
-              <Stack spacing={2} sx={{ px: 4, py: 6 }}>
+              <Stack spacing={2} sx={{ px: 4, py: 6, position: 'relative' }}>
                 <Controller
                   name='id'
                   control={control}
@@ -282,6 +282,7 @@ const Home: NextPage = () => {
                 >
                   {loading ? 'Chargement...' : 'Générer le code barre'}
                 </Button>
+
                 {dataUrl && barcode?.name && (
                   <Box className='print'>
                     <Stack ref={componentRef} sx={{ px: 3, py: 2 }} spacing={2}>
@@ -317,6 +318,30 @@ const Home: NextPage = () => {
                     </Stack>
                   </Box>
                 )}
+                <Typography
+                  variant='caption'
+                  component='p'
+                  textAlign='center'
+                  sx={{
+                    position: 'absolute',
+                    bottom: 15,
+                    width: 1,
+                    textAlign: 'center',
+                  }}
+                >
+                  Copyright &copy; {new Date().getFullYear()}{' '}
+                  <Typography
+                    variant='caption'
+                    color='secondary'
+                    component='a'
+                    href='http://uptodatedevelopers.com'
+                    target='_blank'
+                    rel='noreferrer'
+                  >
+                    Uptodate Developers
+                  </Typography>
+                  . All rights reserved
+                </Typography>
               </Stack>
             </Grid>
             <Grid item xs={12} md={4}>
