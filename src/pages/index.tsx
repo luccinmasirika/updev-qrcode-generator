@@ -1,60 +1,154 @@
-import Button from '@mui/material/Button';
-import type { NextPage } from 'next';
+import DataGrid from '@components/customMUIDataGrid';
 import Input from '@components/input';
-import { Container, Divider, Grid, Stack, Typography } from '@mui/material';
-import { useForm, Controller } from 'react-hook-form';
-import Head from 'next/head';
-import { useBarcode } from 'next-barcode';
-import React from 'react';
-import { toSvg } from 'html-to-image';
-import Image from 'next/image';
-import { useReactToPrint } from 'react-to-print';
-import Tabs from '@mui/material/Tabs';
+import PrintIcon from '@mui/icons-material/Print';
+import RocketLaunchIcon from '@mui/icons-material/RocketLaunch';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import {
+  Container,
+  Divider,
+  Grid,
+  IconButton,
+  Stack,
+  Typography,
+} from '@mui/material';
+import Button from '@mui/material/Button';
 import Tab from '@mui/material/Tab';
+import Tabs from '@mui/material/Tabs';
 import { Box } from '@mui/system';
-// import RocketLaunchIcon from '@mui/icons-material/RocketLaunch';
-interface DataBarcode {
-  id: string;
-  name: string;
-  price: string;
-}
+import {
+  GridColDef,
+  GridRenderCellParams,
+  GridRowsProp,
+} from '@mui/x-data-grid';
+import axios from 'axios';
+import { toSvg } from 'html-to-image';
+import type { NextPage } from 'next';
+import { useBarcode } from 'next-barcode';
+import Head from 'next/head';
+import Image from 'next/image';
+import React from 'react';
+import { Controller, useForm } from 'react-hook-form';
+import { useReactToPrint } from 'react-to-print';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
+import { QRCodeSVG } from 'qrcode.react';
 
 const Home: NextPage = () => {
   const componentRef = React.useRef<React.ReactInstance | null>(null);
   const [tab, setTab] = React.useState(0);
   const [dataUrl, setDataUrl] = React.useState('');
+  const [loading, setLoading] = React.useState(false);
+  const [historicalData, setHistoricalData] = React.useState<Product[]>([]);
+  const [loadingHistorical, setLoadingHistorical] = React.useState(false);
   const [barcode, setBarcode] = React.useState({
-    id: '000000000000',
-    name: 'Lorem Ipsum',
-    price: '729300000',
+    id: '',
+    name: '',
+    description: '',
   });
 
-  const { inputRef } = useBarcode({
-    value: barcode.id,
-  });
+  // const { inputRef } = useBarcode({
+  //   value: barcode.id || '01234567890',
+  // });
+
   const {
     handleSubmit,
     control,
+    reset,
     formState: { errors },
-  } = useForm<DataBarcode>({
-    defaultValues: {
-      id: '383837474757575',
-      name: 'Lorem Ipsum',
-      price: '729300000',
-    },
-  });
+  } = useForm<Omit<Product, 'createdAt'>>();
 
-  const onGenerate = (data: DataBarcode) => {
+  const onGenerate = async (data: Omit<Product, 'createdAt'>) => {
+    try {
+      setBarcode(data);
+      setLoading(true);
+      const res = await axios.post('/api/historical', data);
+      if (res.status === 200) {
+        setLoading(false);
+        toast.success('Code qr généré avec succès');
+      }
+    } catch (error) {
+      setLoading(false);
+      toast.error("Un problème est survenu lors de l'enregistrement");
+    }
+  };
+
+  const getHistoricalData = async () => {
+    try {
+      setLoadingHistorical(true);
+      const res = await axios.get('/api/historical');
+      if (res.status === 200) {
+        setHistoricalData(res.data);
+        setLoadingHistorical(false);
+      }
+    } catch (error) {
+      setLoadingHistorical(false);
+      toast.error(
+        'Un problème est survenu lors de la récupération des données'
+      );
+    }
+  };
+
+  const showHistorical = (data: Omit<Product, 'createdAt'>) => {
     setBarcode(data);
+    reset({ id: data.id, name: data.name, description: data.description });
+    setTab(0);
   };
 
   const handleChange = (event: React.SyntheticEvent, newValue: number) => {
     setTab(newValue);
   };
 
-  const handlePrint = useReactToPrint({
+  const onPrint = useReactToPrint({
     content: () => componentRef.current,
   });
+
+  const handlePrint = () => {
+    onPrint();
+    reset();
+    setBarcode({ id: '', name: '', description: '' });
+  };
+
+  const rows: GridRowsProp = historicalData?.map((el, i) => ({
+    date: new Date(el.createdAt).toLocaleDateString(),
+    id: el.id,
+    name: el.name,
+    description: el.description,
+  }));
+
+  const options = {
+    flex: 1,
+    filterable: false,
+    minWidth: 150,
+  };
+
+  const columns: GridColDef[] = [
+    { ...options, field: 'date', headerName: 'Date', flex: 0 },
+    { ...options, field: 'id', headerName: 'ID', flex: 0 },
+    { ...options, field: 'name', headerName: 'Nom du produit', flex: 0 },
+    { ...options, field: 'description', headerName: 'Description' },
+    {
+      ...options,
+      field: 'action',
+      headerName: 'Action',
+      headerAlign: 'center',
+      align: 'center',
+      width: 140,
+      flex: 0,
+      renderCell: (params: GridRenderCellParams<Product>) => {
+        const { id, name, description } = params.row;
+        return (
+          <IconButton
+            onClick={() => {
+              showHistorical({ id, name, description });
+            }}
+          >
+            <VisibilityIcon fontSize='medium' color='primary' />
+          </IconButton>
+        );
+      },
+    },
+  ];
 
   React.useEffect(() => {
     const node = document.getElementById('barcode') as HTMLElement;
@@ -67,10 +161,21 @@ const Home: NextPage = () => {
       });
   }, [barcode]);
 
+  React.useEffect(() => {
+    if (tab === 1) {
+      getHistoricalData();
+    }
+  }, [tab]);
+
   return (
     <>
       <Head>
-        <title>Générateur Code barre</title>
+        <title>Générateur de Code QR</title>
+        <style type='text/css' media='print'>
+          {'\
+  @page { size: A4 landscape; }\
+'}
+        </style>
       </Head>
       <Stack
         sx={{
@@ -78,9 +183,19 @@ const Home: NextPage = () => {
           background: 'linear-gradient(to right, #b92b27, #1A237E)',
           minHeight: '100vh',
         }}
-        justifyContent='center'
         alignItems='center'
+        justifyContent='center'
       >
+        <ToastContainer
+          position='bottom-right'
+          autoClose={5000}
+          hideProgressBar={false}
+          newestOnTop={false}
+          closeOnClick
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover
+        />
         <Container>
           <Box
             sx={{
@@ -93,7 +208,7 @@ const Home: NextPage = () => {
           >
             <Tabs value={tab} onChange={handleChange}>
               <Tab label='Générateur' />
-              <Tab label='Liste de produits' />
+              <Tab label='Historique' />
             </Tabs>
           </Box>
 
@@ -104,14 +219,17 @@ const Home: NextPage = () => {
               borderRadius: 1,
               boxShadow: '0 0 20px 5px rgba(200,0,0,0.2)',
               overflow: 'hidden',
+              display: tab === 0 ? 'flex' : 'none',
+              minHeight: 430,
             }}
           >
-            <Grid item xs={12} md={8} sx={{ minWidth: 900 }}>
+            <Grid item xs={12} md={8}>
               <Stack spacing={2} sx={{ px: 4, py: 6 }}>
                 <Controller
                   name='id'
                   control={control}
                   rules={{ required: true }}
+                  defaultValue={barcode.id}
                   render={({ field }) => (
                     <Input
                       label='ID du produit'
@@ -127,6 +245,7 @@ const Home: NextPage = () => {
                   name='name'
                   control={control}
                   rules={{ required: true }}
+                  defaultValue={barcode.name}
                   render={({ field }) => (
                     <Input
                       label='Nom du produit'
@@ -138,13 +257,15 @@ const Home: NextPage = () => {
                   )}
                 />
                 <Controller
-                  name='price'
+                  name='description'
                   control={control}
                   rules={{ required: true }}
+                  defaultValue={barcode.description}
                   render={({ field }) => (
                     <Input
-                      label='Prix du produit'
-                      type='number'
+                      label='Description du produit'
+                      multiline
+                      rows={4}
                       error={errors[field.name]?.type === 'required'}
                       helperText={errors[field.name] && 'Ce champ est requis'}
                       handleChange={(e) => field.onChange(e)}
@@ -156,34 +277,29 @@ const Home: NextPage = () => {
                   variant='contained'
                   sx={{ p: 2 }}
                   onClick={handleSubmit(onGenerate)}
-                  // endIcon={<RocketLaunchIcon />}
+                  endIcon={<RocketLaunchIcon />}
                 >
-                  Générer le code barre
+                  {loading ? 'Chargement...' : 'Générer le code qr'}
                 </Button>
-                <div style={{ display: 'none' }}>
-                  <svg ref={inputRef} id='barcode' />
-                </div>
                 {dataUrl && barcode?.name && (
-                  <Stack>
+                  <Box className='print'>
                     <Stack ref={componentRef} sx={{ px: 3, py: 2 }} spacing={2}>
                       <Typography
                         textAlign='center'
                         fontWeight={600}
                         sx={{ textTransform: 'uppercase' }}
                       >
-                        {barcode.name} | {barcode.price} Fc
+                        {barcode.name}
                       </Typography>
                       <Divider />
-                      <Grid container>
-                        {[...Array(16)].map((_, i) => (
-                          <Grid key={i} item xs={3} md={6}>
+                      <Grid container spacing={2}>
+                        {[...Array(24)].map((_, i) => (
+                          <Grid key={i} item xs={2}>
                             <Stack
                               sx={{
                                 width: 1,
-                                height: 160,
+                                height: 150,
                                 position: 'relative',
-                                bgcolor: 'red',
-                                p: 1,
                               }}
                             >
                               <Image
@@ -196,17 +312,8 @@ const Home: NextPage = () => {
                           </Grid>
                         ))}
                       </Grid>
-                      <Divider />
-                      <Stack justifyContent='space-between' direction='row'>
-                        <Typography textAlign='center'>
-                          {new Date().toLocaleDateString()}
-                        </Typography>
-                        <Typography textAlign='center'>
-                          {new Date().toLocaleTimeString()}
-                        </Typography>
-                      </Stack>
                     </Stack>
-                  </Stack>
+                  </Box>
                 )}
               </Stack>
             </Grid>
@@ -216,20 +323,45 @@ const Home: NextPage = () => {
                 sx={{ height: 1, px: 4, py: 6, bgcolor: 'background.paper' }}
                 alignItems='center'
               >
-                <div>
-                  <svg ref={inputRef} id='barcode' />
-                </div>
+                {/* <svg ref={inputRef} id='barcode' /> */}
+                <QRCodeSVG
+                  id='barcode'
+                  value={`ID:${barcode.id}\nNom:${barcode.name}\nDescription:${barcode.description}`}
+                  size={250}
+                  // imageSettings={{
+                  //   src: '/logo.png',
+                  //   width: 50,
+                  //   height: 50,
+                  //   excavate: false,
+                  // }}
+                />
                 <Button
                   variant='contained'
                   sx={{ p: 2, width: 1 }}
                   onClick={handlePrint}
-                  // endIcon={<RocketLaunchIcon />}
+                  endIcon={<PrintIcon />}
                 >
                   Imprimer
                 </Button>
               </Stack>
             </Grid>
           </Grid>
+          {tab === 1 && (
+            <Box
+              sx={{
+                height: 430,
+                bgcolor: '#EBEDF5',
+                borderRadius: 1,
+                p: 2,
+              }}
+            >
+              <DataGrid
+                rows={rows}
+                columns={columns}
+                loading={loadingHistorical}
+              />
+            </Box>
+          )}
         </Container>
       </Stack>
     </>

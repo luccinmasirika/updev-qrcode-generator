@@ -26,22 +26,15 @@ const Input: React.FC<Props> = ({
   error,
 }) => {
   return (
-    <>
-      <TextField
-        label={label}
-        type={type}
-        value={value}
-        sx={{ bgcolor: '#fff' }}
-        onChange={handleChange}
-        {...(multiline && { rows, multiline })}
-        error={error}
-      />
-      {error && (
-        <Typography variant='caption' color='error.main'>
-          {helperText}
-        </Typography>
-      )}
-    </>
+    <TextField
+      label={`${label} ${error ? ` - ${helperText}` : ''}`}
+      type={type}
+      value={value}
+      sx={{ bgcolor: '#fff' }}
+      onChange={handleChange}
+      {...(multiline && { rows, multiline })}
+      error={error}
+    />
   );
 };
 
