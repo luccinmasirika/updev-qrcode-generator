@@ -5,15 +5,14 @@ const prisma = new PrismaClient();
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse<Product>
+  res: NextApiResponse
 ) {
   if (req.method === 'GET') {
     try {
       const historical = await prisma.historical.findMany();
       res.status(200).json(historical);
     } catch (e: any) {
-      console.log('🚀 ~ file: product.ts ~ line 15 ~ e', e);
-      throw new Error("Can't get products historical");
+      res.status(500).json('Server error')
     }
   }
 
@@ -25,8 +24,7 @@ export default async function handler(
       });
       res.status(200).json(product);
     } catch (e: any) {
-      console.log('🚀 ~ file: product.ts ~ line 28 ~ e', e);
-      throw new Error("Can't create product historical");
+      res.status(500).json('Server error');
     }
   }
 }
